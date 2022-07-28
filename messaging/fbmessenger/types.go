@@ -59,3 +59,16 @@ type FeedbackQuestionFollowUp struct {
 type Read struct {
 	Watermark int64 `json:"watermark"`
 }
+
+type sendMessageRequest struct {
+	MessagingType string                 `json:"messaging_type"`
+	Recipient     MessageRecipient       `json:"recipient"`
+	Tag           string                 `json:"tag,omitempty"`
+	Message       map[string]interface{} `json:"message"`
+}
+
+type incomingSendMessageRequest struct {
+	RecipientID  string `json:"recipientId"`
+	TemplateType string `json:"templateType"`
+	Payload      string `json:"payload"`
+}
