@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/HassanElsherbini/messaging-platform/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -30,6 +31,26 @@ func (ms *MessageService) CreateMessage(message *models.Message) (string, error)
 
 	id := result.InsertedID.(primitive.ObjectID).Hex()
 	return id, nil
+}
+
+func (ms *MessageService) AddMessageResponse(messagID string, response *models.MessageResponse) error {
+	id, err := primitive.ObjectIDFromHex(messagID)
+	if err != nil {
+		return err
+	}
+
+	response.CreatedAt = time.Now()
+	update := bson.M{"$set": bson.M{
+		"response": response,
+	}}
+
+	_, err = ms.messageCollection.UpdateByID(context.TODO(), id, update)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (ms *MessageService) NewId() primitive.ObjectID {

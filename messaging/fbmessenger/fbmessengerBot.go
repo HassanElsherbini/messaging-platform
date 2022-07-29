@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/HassanElsherbini/messaging-platform/models"
 	"github.com/HassanElsherbini/messaging-platform/services"
@@ -86,8 +87,57 @@ func (b *Bot) Receive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	go b.processMessageEvents(retrieveMessageEvents(event))
+
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("EVENT_RECEIVED"))
+}
+
+func (b *Bot) processMessageEvents(messageEvents []MessageEvent) {
+	for _, messageEvent := range messageEvents {
+		if messageEvent.Feedback != nil {
+			go b.processFeedback(messageEvent)
+		}
+	}
+}
+
+func (b *Bot) processFeedback(feedbackEvent MessageEvent) {
+	feedbacks := feedbackEvent.Feedback.FeedbackScreens[0].Questions
+
+	feedbackIDs := []string{}
+	for id := range feedbacks {
+		feedbackIDs = append(feedbackIDs, id)
+	}
+
+	id := feedbackIDs[0]
+	feedback := feedbacks[id]
+	score, err := strconv.Atoi(feedback.Payload)
+	if err != nil {
+		log.Printf("failed to record response: %s", err)
+		return
+	}
+
+	messageResponse := &models.MessageResponse{
+		Score: models.MessageResponseScore{Value: score, Range: 5},
+		Text:  feedback.FollowUp.Payload,
+	}
+
+	if err := b.messageService.AddMessageResponse(id, messageResponse); err != nil {
+		log.Printf("failed to add message response: %s", err)
+		return
+	}
+}
+
+func retrieveMessageEvents(event Event) []MessageEvent {
+	var events []MessageEvent
+	for _, entry := range event.Entries {
+		events = append(events, entry.Messaging...)
+	}
+
+	res, _ := json.MarshalIndent(events, "", " ")
+
+	fmt.Println("RETRIEVE MSGS", string(res))
+	return events
 }
 
 func (b *Bot) validateSignature(data []byte, signature string) error {
