@@ -12,7 +12,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/HassanElsherbini/messaging-platform/models"
 	"github.com/HassanElsherbini/messaging-platform/services"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -29,18 +31,23 @@ type Bot struct {
 	verifyToken         string
 	accessToken         string
 	sendMessageEndPoint string
+	sendMessageURI      string
 
 	messageService services.MessageService
 }
 
 func NewBot(messageService services.MessageService, appSecret string, verifyToken string, accessToken string) *Bot {
-	return &Bot{
+	b := &Bot{
 		messageService:      messageService,
 		appSecret:           appSecret,
 		verifyToken:         verifyToken,
 		accessToken:         accessToken,
 		sendMessageEndPoint: "https://graph.facebook.com/v14.0/me/messages",
 	}
+
+	b.sendMessageURI = fmt.Sprintf("%s?access_token=%s", b.sendMessageEndPoint, b.accessToken)
+
+	return b
 }
 
 func (b *Bot) Verify(w http.ResponseWriter, r *http.Request) {
@@ -107,14 +114,14 @@ func (b *Bot) Send(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&incomingSendReq); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
 		log.Printf("Decode request body: %s", err)
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
 	if err := validateSendMessageRequest(incomingSendReq); err != nil {
-		http.Error(w, fmt.Sprintf("bad request: %s", err.Error()), http.StatusBadRequest)
 		log.Printf("validate send message req: %s", err)
+		http.Error(w, fmt.Sprintf("bad request: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 
@@ -123,8 +130,17 @@ func (b *Bot) Send(w http.ResponseWriter, r *http.Request) {
 
 	_, err := b.sendMessage(payload)
 	if err != nil {
-		http.Error(w, "failed to send message", http.StatusInternalServerError)
 		log.Printf("Send message: %s", err)
+		http.Error(w, "failed to send message", http.StatusInternalServerError)
+		return
+	}
+
+	newMessage := messageModelResolver(msgId, payload, incomingSendReq.TemplateType)
+	fmt.Printf("%v", newMessage)
+
+	if _, err := b.messageService.CreateMessage(newMessage); err != nil {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		log.Printf("Failed to create new message: %s", err)
 		return
 	}
 
@@ -132,14 +148,12 @@ func (b *Bot) Send(w http.ResponseWriter, r *http.Request) {
 }
 
 func (b *Bot) sendMessage(payload *sendMessageRequest) ([]byte, error) {
-	url := fmt.Sprintf("%s?access_token=%s", b.sendMessageEndPoint, b.accessToken)
-
 	payloadJSON, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := http.Post(url, "application/json", bytes.NewBuffer(payloadJSON))
+	response, err := http.Post(b.sendMessageURI, "application/json", bytes.NewBuffer(payloadJSON))
 	if err != nil {
 		return nil, err
 	}
@@ -215,5 +229,15 @@ func NewCustomerFeedbackRequest(messageID string, recipientID string) *sendMessa
 		Tag:           "CUSTOMER_FEEDBACK",
 		Recipient:     MessageRecipient{ID: recipientID},
 		Message:       message,
+	}
+}
+
+func messageModelResolver(messageID primitive.ObjectID, fbMessage *sendMessageRequest, messageType string) *models.Message {
+	return &models.Message{
+		ID:           messageID,
+		Channel:      "fbmessenger",
+		RecipientID:  fbMessage.Recipient.ID,
+		TemplateType: messageType,
+		Body:         fbMessage.Message,
 	}
 }
