@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/HassanElsherbini/messaging-platform/analytics"
 	"github.com/HassanElsherbini/messaging-platform/messaging/fbmessenger"
 	"github.com/HassanElsherbini/messaging-platform/services"
 	"github.com/gorilla/mux"
@@ -51,11 +52,14 @@ func main() {
 	messageService := services.NewMessageService(ctx, messageCollection)
 
 	fbBot := fbmessenger.NewBot(messageService, config["APP_SECRET"], config["VERIFY_TOKEN"], config["ACCESS_TOKEN"])
+	analyticsController := analytics.NewAnalyticsController(messageService)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/api/messaging/receive/fbmessenger", fbBot.Verify).Methods("GET")
 	router.HandleFunc("/api/messaging/receive/fbmessenger", fbBot.Receive).Methods("POST")
 	router.HandleFunc("/api/messaging/send/fbmessenger", fbBot.Send).Methods("POST")
+
+	router.HandleFunc("/api/analytics/", analyticsController.Retrieve).Methods("GET")
 
 	log.Printf("Server listening on port %v", config["SERVER_PORT"])
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", config["SERVER_PORT"]), router); err != nil {

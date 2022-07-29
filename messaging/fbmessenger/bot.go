@@ -130,7 +130,7 @@ func (b *Bot) processFeedback(feedbackEvent MessageEvent) {
 	}
 
 	messageResponse := &models.MessageResponse{
-		Score: models.MessageResponseScore{Value: score, Range: 5},
+		Score: &models.MessageResponseScore{Value: score, Range: 5},
 		Text:  feedback.FollowUp.Payload,
 	}
 

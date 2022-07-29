@@ -18,9 +18,9 @@ type Message struct {
 }
 
 type MessageResponse struct {
-	Score     MessageResponseScore `bson:"score" json:"score"`
-	Text      string               `bson:"text" json:"text"`
-	CreatedAt time.Time            `bson:"created_at" json:"createdAt,omitempty" validate:"required"`
+	Score     *MessageResponseScore `bson:"score" json:"score"`
+	Text      string                `bson:"text" json:"text"`
+	CreatedAt time.Time             `bson:"created_at" json:"createdAt,omitempty" validate:"required"`
 }
 
 type MessageResponseScore struct {
