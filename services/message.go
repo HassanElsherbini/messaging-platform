@@ -54,14 +54,14 @@ func (ms *MessageService) AddMessageResponse(messagID string, response *models.M
 }
 
 func (ms *MessageService) MarkMessagesAsRead(recipientID string, readAt time.Time) error {
-	filter := bson.M{"recipient_id": recipientID}
+	filter := bson.M{"recipient_id": recipientID, "read_at": time.Time{}}
 
 	filter["created_at"] = bson.M{
 		"$lte": readAt,
 	}
 
 	update := bson.M{"$set": bson.M{
-		"read": true,
+		"read_at": readAt,
 	}}
 
 	_, err := ms.messageCollection.UpdateMany(context.TODO(), filter, update)

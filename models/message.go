@@ -13,7 +13,7 @@ type Message struct {
 	TemplateType string                 `bson:"template_type" json:"templateType,omitempty" validate:"required"`
 	Body         map[string]interface{} `bson:"body" json:"body,omitempty" validate:"required"`
 	Response     *MessageResponse       `bson:"response" json:"response"`
-	Read         bool                   `bson:"read" json:"read"`
+	ReadAt       time.Time              `bson:"read_at" json:"readAt"`
 	CreatedAt    time.Time              `bson:"created_at" json:"createdAt,omitempty" validate:"required"`
 }
 
