@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/HassanElsherbini/messaging-platform/models"
 	"github.com/HassanElsherbini/messaging-platform/services"
@@ -95,10 +96,21 @@ func (b *Bot) Receive(w http.ResponseWriter, r *http.Request) {
 
 func (b *Bot) processMessageEvents(messageEvents []MessageEvent) {
 	for _, messageEvent := range messageEvents {
-		if messageEvent.Feedback != nil {
+		if messageEvent.Read != nil {
+			go b.processRead(messageEvent)
+		} else if messageEvent.Feedback != nil {
 			go b.processFeedback(messageEvent)
 		}
 	}
+}
+
+func (b *Bot) processRead(readEvent MessageEvent) {
+	readAt := time.Unix(0, readEvent.Read.Watermark*int64(time.Millisecond))
+
+	if err := b.messageService.MarkMessagesAsRead(readEvent.Sender.ID, readAt); err != nil {
+		log.Printf("failed to mark messages as read: %s", err)
+	}
+
 }
 
 func (b *Bot) processFeedback(feedbackEvent MessageEvent) {
