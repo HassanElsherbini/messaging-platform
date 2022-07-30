@@ -6,4 +6,4 @@
 *.dylib
 
 # config
-*.env
+.env
