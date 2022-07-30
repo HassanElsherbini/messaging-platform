@@ -51,7 +51,7 @@ func main() {
 
 	messageService := services.NewMessageService(ctx, messageCollection)
 
-	fbBot := fbmessenger.NewBot(messageService, config["APP_SECRET"], config["VERIFY_TOKEN"], config["ACCESS_TOKEN"])
+	fbBot := fbmessenger.NewBot(messageService, config["FB_APP_SECRET"], config["FB_VERIFY_TOKEN"], config["FB_ACCESS_TOKEN"])
 	analyticsController := analytics.NewAnalyticsController(messageService)
 
 	router := mux.NewRouter()
