@@ -1,0 +1,43 @@
+.sidebar {
+  background-color: #f2f2f2;
+  width: 70px;
+  height: 100%;
+  position: fixed;
+  left: 0;
+  top: 0;
+  background-color: #20232a;
+  box-shadow: 4px 0px 5px 1px rgba(0, 0, 0, 0.1);
+}
+
+.home-container {
+  height: 100%;
+}
+.dashboard-container {
+  margin-left: 70px;
+  box-sizing: border-box;
+
+  height: 100%;
+  padding: 20px 25px;
+}
+
+.dashboard-content {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 100px;
+  width: 80%;
+}
+
+.analytics {
+  height: 500px;
+  width: 60%;
+}
+.dashboard-item h2 {
+  font-size: 30px;
+  margin-bottom: 40px;
+}
+
+.sentiment {
+  margin-top: 300px;
+  height: 500px;
+  width: 60%;
+}
